@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { animate } from "framer-motion";
+import { formatRupees } from "@/lib/money";
 
+// `format` is a string key (not a function) — a Server Component can't pass a
+// function prop to a Client Component, so the formatting lives here.
 interface NumericTileProps {
   label: string;
   numericValue: number;
-  format: (n: number) => string;
+  format: "rupees" | "number";
   sub?: string;
   icon: React.ReactNode;
 }
@@ -25,6 +28,9 @@ export function StatTile({ label, numericValue, format, sub, icon }: NumericTile
     return () => controls.stop();
   }, [numericValue]);
 
+  const rounded = Math.round(display);
+  const text = format === "rupees" ? formatRupees(rounded) : rounded.toLocaleString("en-IN");
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-warm-sm">
       <span className="absolute inset-x-0 top-0 h-1 bg-brand-gradient" />
@@ -32,7 +38,7 @@ export function StatTile({ label, numericValue, format, sub, icon }: NumericTile
         <span className="text-brand">{icon}</span>
         {label}
       </div>
-      <p className="truncate text-xl font-extrabold">{format(display)}</p>
+      <p className="truncate text-xl font-extrabold">{text}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
     </div>
   );

@@ -59,9 +59,9 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
 
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile label="Revenue" numericValue={analytics.revenue_paise} format={formatRupees} icon={<RevenueIcon />} />
-        <StatTile label="Orders" numericValue={analytics.order_count} format={(n) => String(Math.round(n))} icon={<OrdersIcon />} />
-        <StatTile label="Avg order value" numericValue={analytics.aov_paise} format={formatRupees} icon={<AovIcon />} />
+        <StatTile label="Revenue" numericValue={analytics.revenue_paise} format="rupees" icon={<RevenueIcon />} />
+        <StatTile label="Orders" numericValue={analytics.order_count} format="number" icon={<OrdersIcon />} />
+        <StatTile label="Avg order value" numericValue={analytics.aov_paise} format="rupees" icon={<AovIcon />} />
         <TextTile
           label="Top pizza"
           value={analytics.top_pizza?.name ?? "—"}
