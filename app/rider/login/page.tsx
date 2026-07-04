@@ -1,26 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 
 export default function RiderLoginPage() {
   const supabase = createClient();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Already signed in as a rider? Go to the rider console (role-checked to avoid a loop).
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).maybeSingle();
+        if (profile?.role === "rider") {
+          window.location.replace("/rider");
+          return;
+        }
+      }
+      setChecking(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function login() {
     setBusy(true);
     setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) return setError(error.message);
-    router.push("/rider");
-    router.refresh();
+    if (error) {
+      setBusy(false);
+      return setError(error.message);
+    }
+    window.location.assign("/rider");
   }
+
+  if (checking) return null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">

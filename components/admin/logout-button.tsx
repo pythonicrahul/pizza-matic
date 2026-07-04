@@ -1,14 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
 export function LogoutButton({ redirectTo = "/admin/login" }: { redirectTo?: string }) {
-  const router = useRouter();
   async function logout() {
     await createClient().auth.signOut();
-    router.push(redirectTo);
-    router.refresh();
+    // Hard navigation so the cleared session is reflected server-side immediately.
+    window.location.assign(redirectTo);
   }
   return (
     <button onClick={logout} className="rounded-lg px-2 py-1 text-sm text-muted transition-colors hover:bg-background hover:text-foreground">
