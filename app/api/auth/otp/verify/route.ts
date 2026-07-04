@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
 import { validateName, validatePhone } from "@/lib/validators";
-import { getOrCreateCustomer } from "@/lib/data/customers";
+import { getCustomerByPhone, getOrCreateCustomer } from "@/lib/data/customers";
 import { setCustomerSession } from "@/lib/session";
 
-// Verify the OTP and start a customer session. Mock mode accepts the fixed dev
-// code; name is optional but validated if present.
+// Verify the OTP and start a customer session. Returning customers sign in with
+// just phone + code; new customers (sign-up) must also provide a name.
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
   const phone = validatePhone(body?.phone);
   if (!phone.ok) return NextResponse.json({ ok: false, error: phone.error }, { status: 400 });
-
-  const name = validateName(body?.name);
-  if (!name.ok) return NextResponse.json({ ok: false, error: name.error }, { status: 400 });
 
   const code = String(body?.code ?? "").trim();
   const mock = process.env.OTP_MOCK !== "false";
@@ -24,7 +21,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const customer = await getOrCreateCustomer(phone.value, name.value || null);
+    let customer = await getCustomerByPhone(phone.value);
+    if (!customer) {
+      // Sign-up: name is required to create the account.
+      const name = validateName(body?.name);
+      if (!name.ok) return NextResponse.json({ ok: false, error: name.error }, { status: 400 });
+      customer = await getOrCreateCustomer(phone.value, name.value);
+    }
     await setCustomerSession({
       customerId: customer.id,
       phone: customer.phone,

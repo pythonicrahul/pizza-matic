@@ -8,6 +8,17 @@ export interface Customer {
   name: string | null;
 }
 
+/** Look up a customer by phone (no create). Used to tell sign-in from sign-up. */
+export async function getCustomerByPhone(phone: string): Promise<Customer | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("id, phone, name")
+    .eq("phone", phone)
+    .maybeSingle();
+  return (data as Customer) ?? null;
+}
+
 /**
  * Look up a customer by phone, creating them on first login. If a non-empty name
  * is supplied and differs from what's stored, it's updated (name is optional, so

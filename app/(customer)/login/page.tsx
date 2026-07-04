@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [existing, setExisting] = useState(false); // does this phone already have an account?
   const [hint, setHint] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,7 +26,7 @@ export default function LoginPage() {
 
   async function requestOtp() {
     setError("");
-    if (!name.trim()) return setError("Please enter your name.");
+    if (!phone.trim()) return setError("Enter your phone number.");
     setBusy(true);
     try {
       const res = await fetch("/api/auth/otp/request", {
@@ -35,6 +36,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!data.ok) return setError(data.error);
+      setExisting(Boolean(data.existing));
       setHint(data.hint ?? "");
       setStep("code");
     } finally {
@@ -44,12 +46,13 @@ export default function LoginPage() {
 
   async function verifyOtp() {
     setError("");
+    if (!existing && !name.trim()) return setError("Please enter your name.");
     setBusy(true);
     try {
       const res = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ phone, code, name }),
+        body: JSON.stringify({ phone, code, name: existing ? undefined : name }),
       });
       const data = await res.json();
       if (!data.ok) return setError(data.error);
@@ -60,14 +63,22 @@ export default function LoginPage() {
     }
   }
 
+  const heading = step === "phone" ? "Sign in" : existing ? "Welcome back 👋" : "Sign up";
+  const subtitle =
+    step === "phone"
+      ? "Enter your phone — we'll text a code, no password needed."
+      : existing
+        ? "Enter the 6-digit code to sign in."
+        : "You're new here! Add your name + the code to create your account.";
+
   return (
     <div className="mx-auto max-w-sm py-8">
       <div className="mb-6 flex flex-col items-center text-center">
         <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient shadow-warm-md">
           <PizzaMark size={30} />
         </span>
-        <h1 className="text-2xl font-extrabold">Sign in</h1>
-        <p className="mt-1 text-sm text-muted">Enter your name and phone number to order.</p>
+        <h1 className="text-2xl font-extrabold">{heading}</h1>
+        <p className="mt-1 text-sm text-muted">{subtitle}</p>
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-warm-sm">
@@ -86,12 +97,7 @@ export default function LoginPage() {
                 placeholder="10-digit mobile number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-brand focus:outline-none"
-              />
-              <input
-                placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && requestOtp()}
                 className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-brand focus:outline-none"
               />
               <motion.button
@@ -100,7 +106,7 @@ export default function LoginPage() {
                 disabled={busy}
                 className="w-full rounded-xl bg-brand-gradient px-4 py-3 font-bold text-white shadow-warm-md disabled:opacity-50"
               >
-                {busy ? "Sending…" : "Send code"}
+                {busy ? "Checking…" : "Continue"}
               </motion.button>
             </motion.div>
           ) : (
@@ -112,6 +118,14 @@ export default function LoginPage() {
               transition={{ duration: 0.22 }}
               className="space-y-4"
             >
+              {!existing && (
+                <input
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-brand focus:outline-none"
+                />
+              )}
               {hint && <p className="rounded-lg bg-orange-50 px-3 py-2 text-center text-sm text-brand">{hint}</p>}
               <OtpInput value={code} onChange={setCode} />
               <motion.button
@@ -120,9 +134,9 @@ export default function LoginPage() {
                 disabled={busy}
                 className="w-full rounded-xl bg-brand-gradient px-4 py-3 font-bold text-white shadow-warm-md disabled:opacity-50"
               >
-                {busy ? "Verifying…" : "Verify & continue"}
+                {busy ? "Verifying…" : existing ? "Sign in" : "Create account"}
               </motion.button>
-              <button onClick={() => setStep("phone")} className="w-full text-sm text-muted">
+              <button onClick={() => { setStep("phone"); setCode(""); }} className="w-full text-sm text-muted">
                 ← Change number
               </button>
             </motion.div>
