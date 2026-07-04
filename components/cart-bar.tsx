@@ -26,7 +26,8 @@ export function CartBar() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 90, opacity: 0 }}
           transition={{ type: "spring", stiffness: 340, damping: 30 }}
-          className="fixed inset-x-4 bottom-4 z-20 mx-auto max-w-3xl"
+          className="fixed inset-x-4 z-20 mx-auto max-w-3xl"
+          style={{ bottom: "calc(4.75rem + env(safe-area-inset-bottom))" }}
         >
           <Link
             href="/cart"

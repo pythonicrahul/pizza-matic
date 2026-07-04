@@ -1,5 +1,5 @@
 import { requireRider } from "@/lib/auth/rider";
-import { LogoutButton } from "@/components/admin/logout-button";
+import { RiderTabBar } from "@/components/rider-tab-bar";
 
 export default async function RiderLayout({ children }: { children: React.ReactNode }) {
   const { profile } = await requireRider();
@@ -9,13 +9,11 @@ export default async function RiderLayout({ children }: { children: React.ReactN
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <span className="font-extrabold text-brand">🛵 SliceMatic Rider</span>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted sm:inline">{profile.full_name ?? "Rider"}</span>
-            <LogoutButton redirectTo="/rider/login" />
-          </div>
+          <span className="text-sm text-muted">{profile.full_name ?? "Rider"}</span>
         </div>
       </header>
-      <main className="mx-auto max-w-md px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-md px-4 py-6 pb-28">{children}</main>
+      <RiderTabBar />
     </div>
   );
 }
