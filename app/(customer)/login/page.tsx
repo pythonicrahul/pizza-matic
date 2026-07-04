@@ -18,6 +18,7 @@ export default function LoginPage() {
 
   async function requestOtp() {
     setError("");
+    if (!name.trim()) return setError("Please enter your name.");
     setBusy(true);
     try {
       const res = await fetch("/api/auth/otp/request", {
@@ -59,7 +60,7 @@ export default function LoginPage() {
           <PizzaMark size={30} />
         </span>
         <h1 className="text-2xl font-extrabold">Sign in</h1>
-        <p className="mt-1 text-sm text-muted">Order with your phone number — name is optional.</p>
+        <p className="mt-1 text-sm text-muted">Enter your name and phone number to order.</p>
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-warm-sm">
@@ -81,7 +82,7 @@ export default function LoginPage() {
                 className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-brand focus:outline-none"
               />
               <input
-                placeholder="Name (optional)"
+                placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-brand focus:outline-none"

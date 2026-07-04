@@ -15,13 +15,12 @@ const NAME_RE = /^[A-Za-z][A-Za-z ]{1,39}$/;
 // Indian mobile: 10 digits, starts 6–9
 const PHONE_RE = /^[6-9][0-9]{9}$/;
 
-/**
- * Name is OPTIONAL in Stage 3 (per product decision). Empty → accepted as "".
- * A non-empty value must still satisfy the Stage 2 name rule.
- */
+/** Name is required: non-empty, letters + spaces, 2–40 chars. */
 export function validateName(raw: string | null | undefined): Result<string> {
   const name = (raw ?? "").trim();
-  if (name === "") return ok(""); // optional
+  if (name === "") {
+    return err("Please enter your name.");
+  }
   if (!NAME_RE.test(name)) {
     return err("Please enter a valid name using letters and spaces only (2–40 characters).");
   }

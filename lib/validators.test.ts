@@ -7,11 +7,11 @@ import {
   validateToppings,
 } from "./validators";
 
-describe("validateName (optional in Stage 3)", () => {
-  it("accepts empty / whitespace-only as blank", () => {
-    expect(validateName("")).toEqual({ ok: true, value: "" });
-    expect(validateName("   ")).toEqual({ ok: true, value: "" });
-    expect(validateName(null)).toEqual({ ok: true, value: "" });
+describe("validateName (required)", () => {
+  it("rejects empty / whitespace-only", () => {
+    expect(validateName("").ok).toBe(false);
+    expect(validateName("   ").ok).toBe(false);
+    expect(validateName(null).ok).toBe(false);
   });
   it("accepts valid names", () => {
     expect(validateName("Al")).toEqual({ ok: true, value: "Al" });

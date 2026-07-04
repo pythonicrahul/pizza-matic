@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useCart } from "./cart-provider";
 import { PizzaMark } from "./pizza-art";
@@ -13,6 +14,7 @@ interface Session {
 
 export function SiteHeader() {
   const { count } = useCart();
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const { scrollY } = useScroll();
@@ -25,6 +27,13 @@ export function SiteHeader() {
       .then((d) => setSession(d.session))
       .catch(() => {});
   }, []);
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setSession(null);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header
@@ -68,9 +77,12 @@ export function SiteHeader() {
             </AnimatePresence>
           </Link>
           {session ? (
-            <span className="hidden text-muted sm:inline">
-              {session.name || session.phone}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="hidden text-muted sm:inline">{session.name || session.phone}</span>
+              <button onClick={logout} className="font-semibold text-brand hover:underline">
+                Sign out
+              </button>
+            </div>
           ) : (
             <Link href="/login" className="font-semibold text-brand hover:underline">
               Sign in
