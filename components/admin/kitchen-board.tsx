@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { formatRupees } from "@/lib/money";
 
 interface KItem {
@@ -30,6 +31,19 @@ function itemText(it: KItem): string {
 function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });
 }
+
+function urgency(placedAt: string): "ok" | "warn" | "late" {
+  const mins = (Date.now() - new Date(placedAt).getTime()) / 60000;
+  if (mins > 10) return "late";
+  if (mins > 5) return "warn";
+  return "ok";
+}
+
+const URGENCY_BORDER: Record<string, string> = {
+  ok: "border-brand",
+  warn: "border-amber-500",
+  late: "border-red-500",
+};
 
 export function KitchenBoard() {
   const [pending, setPending] = useState<KOrder[]>([]);
@@ -78,34 +92,57 @@ export function KitchenBoard() {
           <p className="rounded-xl border border-dashed border-border p-6 text-center text-veg">✅ All caught up!</p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pending.map((o) => (
-              <div key={o.order_code} className="flex flex-col gap-2 rounded-2xl border-2 border-brand bg-surface p-4">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl font-black text-brand">#{String(o.token).padStart(2, "0")}</span>
-                  <span className="text-xs text-muted">{timeLabel(o.placed_at)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">{o.name || "Guest"}</span>
-                  {o.fulfilment === "takeaway" && (
-                    <span className="rounded-full bg-stone-800 px-2 py-0.5 text-[10px] font-bold text-white">🛍️ TAKE-AWAY</span>
-                  )}
-                </div>
-                <ul className="space-y-1 text-sm text-foreground/80">
-                  {o.order_items.map((it, i) => (
-                    <li key={i}>{itemText(it)}</li>
-                  ))}
-                </ul>
-                <div className="mt-1 flex items-center justify-between border-t border-border pt-2 text-xs text-muted">
-                  <span>{formatRupees(o.total_paise)} · {o.payment_mode} · {o.payment_status}</span>
-                </div>
-                <button
-                  onClick={() => markDone(o.order_code)}
-                  className="mt-1 rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white hover:bg-brand-dark"
-                >
-                  Mark ready
-                </button>
-              </div>
-            ))}
+            <AnimatePresence initial={false}>
+              {pending.map((o) => {
+                const level = urgency(o.placed_at);
+                return (
+                  <motion.div
+                    key={o.order_code}
+                    layout
+                    initial={{ opacity: 0, scale: 0.92, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 340, damping: 28 }}
+                    className={`flex flex-col gap-2 rounded-2xl border-2 bg-surface p-4 shadow-warm-sm ${URGENCY_BORDER[level]}`}
+                  >
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-2xl font-black text-brand">#{String(o.token).padStart(2, "0")}</span>
+                      <span className={`flex items-center gap-1 text-xs ${level === "late" ? "font-semibold text-red-600" : "text-muted"}`}>
+                        {level === "late" && (
+                          <motion.span
+                            className="h-1.5 w-1.5 rounded-full bg-red-500"
+                            animate={{ opacity: [1, 0.3, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.2 }}
+                          />
+                        )}
+                        {timeLabel(o.placed_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{o.name || "Guest"}</span>
+                      {o.fulfilment === "takeaway" && (
+                        <span className="rounded-full bg-stone-800 px-2 py-0.5 text-[10px] font-bold text-white">🛍️ TAKE-AWAY</span>
+                      )}
+                    </div>
+                    <ul className="space-y-1 text-sm text-foreground/80">
+                      {o.order_items.map((it, i) => (
+                        <li key={i}>{itemText(it)}</li>
+                      ))}
+                    </ul>
+                    <div className="mt-1 flex items-center justify-between border-t border-border pt-2 text-xs text-muted">
+                      <span>{formatRupees(o.total_paise)} · {o.payment_mode} · {o.payment_status}</span>
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => markDone(o.order_code)}
+                      className="mt-1 rounded-xl bg-brand-gradient px-3 py-2 text-sm font-bold text-white shadow-warm-sm"
+                    >
+                      Mark ready
+                    </motion.button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </section>
@@ -114,11 +151,18 @@ export function KitchenBoard() {
         <section>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">✅ Recently ready</h2>
           <div className="flex flex-wrap gap-2">
-            {done.map((o) => (
-              <span key={o.order_code} className="rounded-lg border border-veg/40 bg-green-50 px-3 py-1.5 text-sm text-green-800">
-                <strong>#{String(o.token).padStart(2, "0")}</strong> {o.name || "Guest"}
-              </span>
-            ))}
+            <AnimatePresence initial={false}>
+              {done.map((o) => (
+                <motion.span
+                  key={o.order_code}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="rounded-lg border border-veg/40 bg-green-50 px-3 py-1.5 text-sm text-green-800"
+                >
+                  <strong>#{String(o.token).padStart(2, "0")}</strong> {o.name || "Guest"}
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
         </section>
       )}

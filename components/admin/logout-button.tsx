@@ -11,7 +11,7 @@ export function LogoutButton({ redirectTo = "/admin/login" }: { redirectTo?: str
     router.refresh();
   }
   return (
-    <button onClick={logout} className="text-sm text-muted hover:text-foreground hover:underline">
+    <button onClick={logout} className="rounded-lg px-2 py-1 text-sm text-muted transition-colors hover:bg-background hover:text-foreground">
       Sign out
     </button>
   );

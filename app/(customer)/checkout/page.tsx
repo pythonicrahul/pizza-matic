@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/components/cart-provider";
 import { toPayload } from "@/lib/cart-types";
 import { SHOP } from "@/lib/constants";
 import { haversineKm } from "@/lib/geo";
+import { scaleTap } from "@/lib/motion";
 
 type PaymentMode = "cash" | "card" | "upi";
 type Fulfilment = "delivery" | "takeaway";
@@ -163,7 +165,6 @@ export default function CheckoutPage() {
   }
 
   const canPlace = !busy && (fulfilment === "takeaway" || (!!coords && inRange));
-  const cashLabel = fulfilment === "delivery" ? "Cash on Delivery" : "Cash (pay at store)";
 
   return (
     <div className="mx-auto max-w-lg">
@@ -174,76 +175,167 @@ export default function CheckoutPage() {
       <div className="mb-5 grid grid-cols-2 gap-2">
         <button
           onClick={() => { setFulfilment("delivery"); setAutoNote(""); }}
-          className={`rounded-xl border px-4 py-3 text-sm font-bold ${fulfilment === "delivery" ? "border-brand bg-brand text-white" : "border-border bg-surface"}`}
+          className={`rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${fulfilment === "delivery" ? "border-brand bg-brand-gradient text-white shadow-warm-sm" : "border-border bg-surface"}`}
         >
           🛵 Delivery
         </button>
         <button
           onClick={() => { setFulfilment("takeaway"); setError(""); }}
-          className={`rounded-xl border px-4 py-3 text-sm font-bold ${fulfilment === "takeaway" ? "border-brand bg-brand text-white" : "border-border bg-surface"}`}
+          className={`rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${fulfilment === "takeaway" ? "border-brand bg-brand-gradient text-white shadow-warm-sm" : "border-border bg-surface"}`}
         >
           🛍️ Take-away / Dine-in
         </button>
       </div>
 
-      {autoNote && <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{autoNote}</p>}
-
-      {fulfilment === "delivery" ? (
-        <section className="mb-5 rounded-2xl border border-border bg-surface p-4">
-          <h2 className="mb-2 font-semibold">Delivery location</h2>
-          <button
-            onClick={captureLocation}
-            className="rounded-xl border border-brand px-4 py-2 text-sm font-bold text-brand hover:bg-brand hover:text-white"
+      <AnimatePresence>
+        {autoNote && (
+          <motion.p
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700"
           >
-            {geoState === "loading" ? "Locating…" : coords ? "📍 Location captured" : "Use my location"}
-          </button>
-          {distanceKm !== null && (
-            <p className={`mt-2 text-xs ${inRange ? "text-veg" : "text-red-500"}`}>
-              {distanceKm} km from {SHOP.area} · {inRange ? "within delivery range ✓" : "out of range"}
-            </p>
+            {autoNote}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <div className="relative">
+        <div className="absolute left-4 top-9 bottom-9 w-px bg-border" aria-hidden="true" />
+
+        {fulfilment === "delivery" ? (
+          <StepSection index={1} title="Delivery location">
+            <motion.button
+              whileTap={scaleTap.whileTap}
+              onClick={captureLocation}
+              className="flex items-center gap-2 rounded-xl border border-brand px-4 py-2 text-sm font-bold text-brand transition-colors hover:bg-brand hover:text-white"
+            >
+              {geoState === "loading" ? (
+                <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="inline-block">📍</motion.span>
+              ) : coords ? (
+                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 15 }}>✅</motion.span>
+              ) : (
+                <span>📍</span>
+              )}
+              {geoState === "loading" ? "Locating…" : coords ? "Location captured" : "Use my location"}
+            </motion.button>
+            {distanceKm !== null && (
+              <p className={`mt-2 text-xs ${inRange ? "text-veg" : "text-red-500"}`}>
+                {distanceKm} km from {SHOP.area} · {inRange ? "within delivery range ✓" : "out of range"}
+              </p>
+            )}
+            <input
+              placeholder="Flat / building / landmark (optional)"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="mt-3 w-full rounded-xl border border-border bg-surface px-4 py-3"
+            />
+          </StepSection>
+        ) : (
+          <StepSection index={1} title="Pick up at the store">
+            <p className="text-sm text-muted">🛍️ {SHOP.name} · {SHOP.area}</p>
+            <p className="mt-1 text-xs text-muted">We&apos;ll have your order ready at the counter — no delivery needed.</p>
+          </StepSection>
+        )}
+
+        <StepSection index={2} title="Payment">
+          <div className="grid grid-cols-3 gap-2">
+            <PaymentOption id="cash" label="Cash" icon={<CashIcon />} checked={payment === "cash"} onSelect={() => setPayment("cash")} />
+            <PaymentOption id="upi" label="UPI" icon={<UpiIcon />} checked={payment === "upi"} onSelect={() => setPayment("upi")} />
+            <PaymentOption id="card" label="Card" icon={<CardIcon />} checked={payment === "card"} onSelect={() => setPayment("card")} />
+          </div>
+          {payment === "cash" && (
+            <p className="mt-2 text-xs text-muted">{fulfilment === "delivery" ? "Pay cash on delivery." : "Pay at the store counter."}</p>
           )}
-          <input
-            placeholder="Flat / building / landmark (optional)"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-border bg-surface px-4 py-3"
-          />
-        </section>
-      ) : (
-        <section className="mb-5 rounded-2xl border border-border bg-surface p-4">
-          <h2 className="mb-1 font-semibold">Pick up at the store</h2>
-          <p className="text-sm text-muted">🛍️ {SHOP.name} · {SHOP.area}</p>
-          <p className="mt-1 text-xs text-muted">We&apos;ll have your order ready at the counter — no delivery needed.</p>
-        </section>
-      )}
+        </StepSection>
+      </div>
 
-      <section className="mb-5 rounded-2xl border border-border bg-surface p-4">
-        <h2 className="mb-2 font-semibold">Payment</h2>
-        <div className="space-y-2">
-          <PaymentOption label={cashLabel} checked={payment === "cash"} onSelect={() => setPayment("cash")} />
-          <PaymentOption label="UPI (Razorpay)" checked={payment === "upi"} onSelect={() => setPayment("upi")} />
-          <PaymentOption label="Card (Razorpay)" checked={payment === "card"} onSelect={() => setPayment("card")} />
-        </div>
-      </section>
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
-      {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-
-      <button
+      <motion.button
+        whileTap={canPlace ? scaleTap.whileTap : undefined}
         onClick={placeOrder}
         disabled={!canPlace}
-        className="w-full rounded-xl bg-brand px-4 py-3 font-bold text-white hover:bg-brand-dark disabled:opacity-50"
+        className="w-full rounded-xl bg-brand-gradient px-4 py-3 font-bold text-white shadow-warm-md disabled:opacity-50"
       >
         {busy ? "Processing…" : payment === "cash" ? "Place order" : "Pay & place order"}
-      </button>
+      </motion.button>
     </div>
   );
 }
 
-function PaymentOption({ label, checked, onSelect }: { label: string; checked: boolean; onSelect: () => void }) {
+function StepSection({ index, title, children }: { index: number; title: string; children: React.ReactNode }) {
   return (
-    <label className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium ${checked ? "border-brand bg-orange-50" : "border-border"}`}>
-      <input type="radio" name="payment" checked={checked} onChange={onSelect} className="accent-brand" />
+    <section className="relative mb-5 pl-11">
+      <span className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white shadow-warm-sm">
+        {index}
+      </span>
+      <div className="rounded-2xl border border-border bg-surface p-4 shadow-warm-sm">
+        <h2 className="mb-2 font-semibold">{title}</h2>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function PaymentOption({
+  label,
+  icon,
+  checked,
+  onSelect,
+}: {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-semibold transition-colors ${
+        checked ? "border-brand bg-orange-50 text-brand shadow-warm-sm" : "border-border text-foreground hover:border-brand/30"
+      }`}
+    >
+      <span className={checked ? "text-brand" : "text-muted"}>{icon}</span>
       {label}
-    </label>
+    </button>
+  );
+}
+
+function CashIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+function UpiIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="6" y="2.5" width="12" height="19" rx="2" />
+      <path d="M10 18h4" />
+    </svg>
+  );
+}
+function CardIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="2.5" y="5" width="19" height="14" rx="2" />
+      <path d="M2.5 10h19" />
+    </svg>
   );
 }
