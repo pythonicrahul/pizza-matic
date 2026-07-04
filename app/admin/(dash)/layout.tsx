@@ -14,6 +14,7 @@ export default async function AdminDashLayout({ children }: { children: React.Re
             <nav className="flex gap-4 text-sm font-medium">
               <Link href="/admin" className="hover:text-brand">Dashboard</Link>
               <Link href="/admin/kitchen" className="hover:text-brand">Kitchen</Link>
+              <Link href="/admin/deliveries" className="hover:text-brand">Delivery</Link>
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">
