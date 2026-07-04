@@ -42,7 +42,7 @@ export default function CheckoutPage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (!d.session) router.replace("/login");
+        if (!d.session) router.replace("/login?next=/checkout");
       });
   }, [router]);
 

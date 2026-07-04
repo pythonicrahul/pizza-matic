@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { PizzaMark } from "@/components/pizza-art";
@@ -15,6 +15,13 @@ export default function LoginPage() {
   const [hint, setHint] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Where to go after signing in — e.g. /login?next=/checkout returns to the flow.
+  const [next, setNext] = useState("/");
+
+  useEffect(() => {
+    const n = new URLSearchParams(window.location.search).get("next");
+    if (n && n.startsWith("/") && !n.startsWith("//")) setNext(n);
+  }, []);
 
   async function requestOtp() {
     setError("");
@@ -46,7 +53,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!data.ok) return setError(data.error);
-      router.push("/");
+      router.push(next);
       router.refresh();
     } finally {
       setBusy(false);
