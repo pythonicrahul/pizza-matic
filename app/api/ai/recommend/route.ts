@@ -10,7 +10,6 @@ import { getRecommendation, type HistoryEntry, type Recommendation } from "@/lib
 // banner always has something to show.
 export async function GET() {
   const session = await getCustomerSession();
-  if (!session) return NextResponse.json({ rec: null });
 
   let menu;
   try {
@@ -24,10 +23,13 @@ export async function GET() {
       pizza: menu!.pizza[0]?.name ?? "Margherita",
       base: menu!.base[0]?.name ?? "Thin Crust",
       topping: null,
-      reason: "A house favourite to get you started.",
+      reason: "A customer favourite to start with.",
     },
     source: "popular",
   });
+
+  // Logged out → a generic top pick (never a personalized "for you").
+  if (!session) return NextResponse.json(fallback());
 
   // Flatten order history into prompt entries.
   const rows = (await getCustomerHistory(session.customerId)) as unknown as Array<{

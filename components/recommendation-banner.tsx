@@ -41,7 +41,7 @@ export function RecommendationBanner() {
           <div className="relative min-w-0">
             <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-brand">
               <span>✨</span>
-              <span>{source === "ai" ? "Recommended for you" : "Popular pick"}</span>
+              <span>{source === "ai" ? "Recommended for you" : "Top pick"}</span>
             </div>
             <p className="truncate font-semibold">
               {rec.pizza} on {rec.base}
