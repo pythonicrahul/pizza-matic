@@ -3,6 +3,37 @@ import { getAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validatePhone } from "@/lib/validators";
 
+const ACTIVE = ["assigned", "picked_up", "out_for_delivery"];
+
+// Remove a rider: requeue any in-flight delivery, detach historical ones, then
+// delete the auth user (cascades the profile). /api/admin/riders?id=<uuid>
+export async function DELETE(req: Request) {
+  const admin = await getAdmin();
+  if (!admin) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ ok: false, error: "Missing rider id." }, { status: 400 });
+
+  const svc = createAdminClient();
+  const { data: prof } = await svc.from("profiles").select("role").eq("id", id).maybeSingle();
+  if (!prof || prof.role !== "rider") {
+    return NextResponse.json({ ok: false, error: "Not a rider." }, { status: 404 });
+  }
+
+  // In-flight deliveries → back to the queue; historical → detach the rider.
+  await svc.from("deliveries").update({ rider_id: null, status: "unassigned" }).eq("rider_id", id).in("status", ACTIVE);
+  await svc.from("deliveries").update({ rider_id: null }).eq("rider_id", id);
+
+  const { error } = await svc.auth.admin.deleteUser(id);
+  if (error) {
+    return NextResponse.json({ ok: false, error: "Could not remove rider." }, { status: 500 });
+  }
+
+  // Reassign anything that was freed up.
+  await svc.rpc("dispatch_deliveries");
+  return NextResponse.json({ ok: true });
+}
+
 // Onboard a delivery rider: create the auth user (service role) + a rider profile.
 export async function POST(req: Request) {
   const admin = await getAdmin();

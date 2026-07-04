@@ -1,6 +1,7 @@
 import { getRiders, getDeliveryQueue } from "@/lib/data/delivery";
 import { formatRupees } from "@/lib/money";
 import { RiderOnboardForm } from "@/components/admin/rider-onboard-form";
+import { RemoveRiderButton } from "@/components/admin/remove-rider-button";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function DeliveriesPage() {
               <th className="px-4 py-3">Phone</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Current order</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -46,11 +48,14 @@ export default async function DeliveriesPage() {
                   <td className="px-4 py-3">
                     {r.current ? `#${String(r.current.token).padStart(2, "0")} · ${r.current.status.replace(/_/g, " ")}` : "—"}
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <RemoveRiderButton id={r.id} />
+                  </td>
                 </tr>
               );
             })}
             {riders.length === 0 && (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">No riders yet — onboard one above.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-muted">No riders yet — onboard one above.</td></tr>
             )}
           </tbody>
         </table>
