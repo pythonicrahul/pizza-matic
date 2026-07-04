@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
+import { CartUpsell } from "@/components/cart-upsell";
 import { VegDot } from "@/components/veg-dot";
 import { formatRupees } from "@/lib/money";
 import { lineUnitPaise, toPayload } from "@/lib/cart-types";
@@ -72,6 +73,8 @@ export default function CartPage() {
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+
+      <CartUpsell />
 
       {bill && (
         <div className="mt-5 rounded-2xl border border-border bg-surface p-4">

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import type { CartLineUI } from "@/lib/cart-types";
+import type { CartItemRef, CartLineUI } from "@/lib/cart-types";
 
 const KEY = "slicematic_cart_v1";
 
@@ -10,6 +10,7 @@ interface CartCtx {
   count: number;
   add: (line: Omit<CartLineUI, "key">) => void;
   setQty: (key: string, qty: number) => void;
+  addToppingToLine: (key: string, topping: CartItemRef) => void;
   remove: (key: string) => void;
   clear: () => void;
 }
@@ -44,6 +45,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, qty } : l)));
   }, []);
 
+  // Add a suggested topping to an existing line (no duplicates).
+  const addToppingToLine = useCallback((key: string, topping: CartItemRef) => {
+    setLines((prev) =>
+      prev.map((l) =>
+        l.key === key && !l.toppings.some((t) => t.id === topping.id)
+          ? { ...l, toppings: [...l.toppings, topping] }
+          : l,
+      ),
+    );
+  }, []);
+
   const remove = useCallback((key: string) => {
     setLines((prev) => prev.filter((l) => l.key !== key));
   }, []);
@@ -53,7 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const count = lines.reduce((s, l) => s + l.qty, 0);
 
   return (
-    <Ctx.Provider value={{ lines, count, add, setQty, remove, clear }}>
+    <Ctx.Provider value={{ lines, count, add, setQty, addToppingToLine, remove, clear }}>
       {children}
     </Ctx.Provider>
   );

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "seed:menu": "tsx supabase/seed/seed-menu.ts",
-    "seed:admin": "tsx supabase/seed/seed-admin.ts"
+    "seed:admin": "tsx supabase/seed/seed-admin.ts",
+    "seed:orders": "tsx supabase/seed/seed-orders.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
