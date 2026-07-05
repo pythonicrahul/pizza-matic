@@ -68,24 +68,40 @@ export default function CartPage() {
               <PizzaThumb name={l.pizza.name} seed={l.pizza.id} isVeg={l.pizza.is_veg} size={52} className="shadow-warm-sm" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <VegDot isVeg={l.pizza.is_veg} />
-                      {l.pizza.name}
-                    </div>
-                    <p className="truncate text-sm text-muted">
-                      {l.base.name}
-                      {l.toppings.length > 0 && ` · ${l.toppings.map((t) => t.name).join(", ")}`}
-                    </p>
-                    <p className="mt-1 text-sm font-medium">{formatRupees(lineUnitPaise(l))} / pizza</p>
+                  <div className="flex min-w-0 items-center gap-2 font-semibold">
+                    <VegDot isVeg={l.pizza.is_veg} />
+                    <span className="truncate">{l.pizza.name}</span>
                   </div>
                   <button onClick={() => remove(l.key)} className="shrink-0 text-sm text-red-500 hover:underline">Remove</button>
                 </div>
-                <div className="mt-3 flex items-center gap-3">
+
+                {/* Itemised price breakup (per pizza) */}
+                <div className="mt-2 space-y-0.5 text-xs text-muted">
+                  <div className="flex justify-between gap-2">
+                    <span className="truncate">{l.pizza.name}</span>
+                    <span className="shrink-0">{formatRupees(l.pizza.price_paise)}</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="truncate">{l.base.name} base</span>
+                    <span className="shrink-0">{formatRupees(l.base.price_paise)}</span>
+                  </div>
+                  {l.toppings.map((t) => (
+                    <div key={t.id} className="flex justify-between gap-2">
+                      <span className="truncate">+ {t.name}</span>
+                      <span className="shrink-0">{formatRupees(t.price_paise)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-1 flex justify-between text-sm font-medium">
+                  <span>Per pizza</span>
+                  <span>{formatRupees(lineUnitPaise(l))}</span>
+                </div>
+
+                <div className="mt-3 flex items-center gap-3 border-t border-border pt-3">
                   <motion.button whileTap={scaleTap.whileTap} onClick={() => setQty(l.key, Math.max(1, l.qty - 1))} className="h-8 w-8 rounded-full border border-border font-bold">−</motion.button>
                   <span className="w-6 text-center font-semibold">{l.qty}</span>
                   <motion.button whileTap={scaleTap.whileTap} onClick={() => setQty(l.key, Math.min(10, l.qty + 1))} className="h-8 w-8 rounded-full border border-border font-bold">+</motion.button>
-                  <span className="ml-auto font-semibold">{formatRupees(lineUnitPaise(l) * l.qty)}</span>
+                  <span className="ml-auto font-semibold">{l.qty}× · {formatRupees(lineUnitPaise(l) * l.qty)}</span>
                 </div>
               </div>
             </motion.div>
